@@ -1,0 +1,9 @@
+# Caches and local clutter. This repository is public, so keep it clean.
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.DS_Store
+
+# Session transcripts must never be committed.
+*.jsonl
