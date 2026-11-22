@@ -58,8 +58,17 @@ Wins from before the game kept guess counts (a stats file from an older
 version) aren't in the rows or the average. The game says how many there are.
 
 The statistics are saved in `~/.wordle_stats.json` in your home directory, so
-they carry over to the next time you play. Delete that file to start again
-from zero.
+they carry over to the next time you play.
+
+To start again from zero:
+
+    python3 main.py --reset-stats
+
+It shows your current statistics and asks
+`Reset all statistics? This cannot be undone. (y/N)`. Only `y` or `yes`
+clears them. Anything else, or just pressing Enter, keeps them. Either way
+it then exits, so run `python3 main.py` to play. A reset deletes the stats
+file.
 
 ## Run the tests
 
@@ -74,8 +83,8 @@ Requires Python 3 and `pytest` (`python3 -m pip install pytest`). Nothing else.
 - `words.py` — the built-in word list, each word's difficulty rating, and the
   random pick.
 - `stats.py` — games played, won and lost, win percentage, streaks, guesses
-  per win, and the saved stats file.
-- `main.py` — the terminal front end.
+  per win, and the saved stats file, including resetting it.
+- `main.py` — the terminal front end, and the `--reset-stats` option.
 - `tests/` — one test file per module; each test is named for the requirement
   it checks.
 - `problem.md` — who this is for and the numbered requirements.
