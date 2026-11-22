@@ -1,5 +1,5 @@
 """Statistics across games: counts and win percentage (R7), streaks and the
-saved stats file (R8).
+saved stats file (R8), and how many guesses each win took (R10).
 
 The rules are pure functions on an immutable Stats record. The only file
 input and output is in load_stats and save_stats, which take the path as an
@@ -12,8 +12,13 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
-FILE_VERSION = 1
+FILE_VERSION = 2
 FIELDS = ("played", "won", "current_streak", "longest_streak")
+
+# One row for each number of guesses a win can take: 1 to 8 (R10). Easy,
+# the level with the most guesses, has 8.
+GUESS_ROWS = 8
+NO_WINS = (0,) * GUESS_ROWS
 
 
 @dataclass(frozen=True)
@@ -22,11 +27,19 @@ class Stats:
     won: int = 0
     current_streak: int = 0
     longest_streak: int = 0
+    # wins_by_guesses[0] is wins in 1 guess, [7] is wins in 8 (R10).
+    wins_by_guesses: tuple = NO_WINS
 
     @property
     def lost(self):
         # Worked out, never stored, so it can't disagree with played and won.
         return self.played - self.won
+
+
+def _add_win(counts, guesses):
+    counts = list(counts)
+    counts[guesses - 1] += 1
+    return tuple(counts)
 
 
 def record_game(stats, game):
@@ -42,12 +55,14 @@ def record_game(stats, game):
             won=stats.won + 1,
             current_streak=current,
             longest_streak=max(stats.longest_streak, current),
+            wins_by_guesses=_add_win(stats.wins_by_guesses, game.attempts_used),
         )
     return Stats(
         played=stats.played + 1,
         won=stats.won,
         current_streak=0,
         longest_streak=stats.longest_streak,
+        wins_by_guesses=stats.wins_by_guesses,
     )
 
 
@@ -57,6 +72,42 @@ def win_percentage(stats):
         return 0
     # Integer form of floor(100 * won / played + 0.5), with no float error.
     return (200 * stats.won + stats.played) // (2 * stats.played)
+
+
+def untracked_wins(stats):
+    """Wins with no guess count: those recorded before round 5 (R10)."""
+    return stats.won - sum(stats.wins_by_guesses)
+
+
+def average_guesses_to_win(stats):
+    """Average guesses per win, to one decimal place with halves rounded up.
+
+    Only wins in the distribution count, since untracked wins have no guess
+    count. None if there are no such wins.
+    """
+    wins = sum(stats.wins_by_guesses)
+    if wins == 0:
+        return None
+    guesses = sum(n * count for n, count in enumerate(stats.wins_by_guesses, 1))
+    # Integer form of floor(10 * guesses / wins + 0.5), with no float error.
+    tenths = (20 * guesses + wins) // (2 * wins)
+    return tenths / 10
+
+
+def bar_lengths(counts, width=20):
+    """How many marks to draw for each row of the distribution.
+
+    One mark per win while the biggest row fits in `width`. Beyond that the
+    biggest row gets `width`, the rest are scaled to match (halves rounded
+    up), and a row with any wins keeps at least one mark.
+    """
+    biggest = max(counts, default=0)
+    if biggest <= width:
+        return list(counts)
+    return [
+        max(1, (2 * c * width + biggest) // (2 * biggest)) if c else 0
+        for c in counts
+    ]
 
 
 def default_stats_path():
@@ -70,14 +121,31 @@ def _is_count(value):
 
 
 def _from_dict(data):
-    """Build Stats from file data, or return None if it is not believable."""
-    if not isinstance(data, dict) or data.get("version") != FILE_VERSION:
+    """Build Stats from file data, or return None if it is not believable.
+
+    Version 1 files (before round 5) have no guess counts, so their
+    distribution starts empty and all their wins count as untracked.
+    """
+    if not isinstance(data, dict) or data.get("version") not in (1, 2):
         return None
     values = [data.get(name) for name in FIELDS]
     if not all(_is_count(v) for v in values):
         return None
-    stats = Stats(*values)
+    if data["version"] == 1:
+        counts = NO_WINS
+    else:
+        counts = data.get("wins_by_guesses")
+        if not (
+            isinstance(counts, list)
+            and len(counts) == GUESS_ROWS
+            and all(_is_count(c) for c in counts)
+        ):
+            return None
+        counts = tuple(counts)
+    stats = Stats(*values, wins_by_guesses=counts)
     if not (stats.current_streak <= stats.longest_streak <= stats.won <= stats.played):
+        return None
+    if untracked_wins(stats) < 0:
         return None
     return stats
 
@@ -102,6 +170,7 @@ def save_stats(stats, path):
     path = Path(path)
     data = {"version": FILE_VERSION}
     data.update({name: getattr(stats, name) for name in FIELDS})
+    data["wins_by_guesses"] = list(stats.wins_by_guesses)
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=path.name, suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:
