@@ -13,3 +13,10 @@ daily limits, or require an internet connection.
 - R4. Select a new random word for each game from a built-in word list.
 - R5. Tell the player when they win or run out of attempts.
 - R6. Reveal the correct word when the player loses.
+
+# Round 2 requirements
+
+- R7. Track the total number of games played, games won, and games lost, and
+  calculate the player's win percentage.
+- R8. Track the player's current and longest winning streak, and save these
+  statistics locally so they persist between sessions.
