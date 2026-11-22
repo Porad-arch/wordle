@@ -196,3 +196,63 @@ extends the same streak as a win on Hard. The stats file format and
 - Separate statistics for each level.
 - Choosing the level from the command line.
 - Changing the level in the middle of a game.
+
+## Round 4
+
+### Shape of the code
+
+| File | Change | Tested |
+|---|---|---|
+| `words.py` | `UNCOMMON_LETTERS` is now `J Q X Z`. New `letter_bonus(word)`. `difficulty_score(word)` now returns a pair, `(rating, bonus)`, not a sum | Yes |
+| `game.py`, `stats.py`, `main.py` | Unchanged | — |
+
+### How each requirement is met
+
+- **R9 (changed)**: a word's difficulty is now decided **by its hand
+  commonness rating first**. The letters only order words that have the same
+  rating. Choices made by the project owner at the start of round 4:
+
+  | Part | Counts | Function |
+  |---|---|---|
+  | Hand rating: 1 everyday, 2 familiar, 3 less common (unchanged from round 3) | decides first | `COMMONNESS[word]` |
+  | Uncommon letters `J Q X Z`, counted each time they appear | breaks ties within a rating | `uncommon_letter_count(word)` |
+  | A repeated letter, 0 or 1 (kept from round 3) | breaks ties within a rating | `has_repeated_letter(word)` |
+
+  `letter_bonus(word)` is the uncommon-letter count plus the repeated
+  letter. `difficulty_score(word)` returns `(COMMONNESS[word],
+  letter_bonus(word))`. Python compares pairs first item first, so a word
+  with a higher rating is always harder than a word with a lower one, however
+  big the bonus is. That is what "bonuses must not outweigh the commonness
+  rating" means here: a bonus can't even bring a word level with a less
+  common word. It can only lift a word above other words with the same
+  rating.
+
+  `ranked_words()` still sorts by `(score, word)`, so ties are still broken
+  alphabetically. `words_for(difficulty)` still cuts the ranking into equal
+  thirds (decision 0005), and `pick_word` is unchanged.
+
+  K, V, W, Y, F, and B no longer count as uncommon.
+
+  Examples: `CRANE` is (1, 0). `HAPPY` is (1, 1): everyday, with a repeated
+  P. `PIZZA` is (2, 3): two Z's and a repeated Z, but it is still easier
+  than every word rated 3. `JEWEL` is (3, 2).
+
+### How the levels split now
+
+| Level | Words | What is in it |
+|---|---|---|
+| Easy | 33 | 33 everyday words with no bonus |
+| Normal | 33 | 15 everyday words (4 with no bonus, 11 with a bonus) and 18 familiar words with no bonus |
+| Hard | 34 | 21 familiar words (10 with no bonus, 11 with one) and all 13 less common words |
+
+In round 3, HAPPY and HONEY were on Hard because of their letters. Now both
+are on Normal, and every word rated 3 is on Hard.
+
+### Statistics
+
+Unchanged. The stats file is still version 1.
+
+### Out of scope in round 4
+
+- Changing any word's hand rating, or the 1–3 scale.
+- Changing how the levels are split (still equal thirds).
