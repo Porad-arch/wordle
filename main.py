@@ -1,8 +1,10 @@
 """The terminal front end: reads guesses, prints the board, says who won,
-and shows the running statistics after each game.
+and shows the running statistics after each game. With --reset-stats it
+asks whether to clear the saved statistics instead (R11).
 
 All the rules live in game.py, words.py, and stats.py. This file only handles
-input and output, which is why there are no tests for it.
+input and output. The only tests for it are of --reset-stats, in
+tests/test_main.py.
 """
 
 import sys
@@ -11,9 +13,11 @@ from game import Game, Mark, parse_difficulty, result_message
 from stats import (
     average_guesses_to_win,
     bar_lengths,
+    confirms_reset,
     default_stats_path,
     load_stats,
     record_game,
+    reset_stats,
     save_stats,
     untracked_wins,
     win_percentage,
@@ -111,10 +115,35 @@ def ask_play_again():
     return answer.strip().lower() in ("y", "yes")
 
 
+def ask_reset(path):
+    """Show the saved stats and clear them if the player says yes (R11)."""
+    stats = load_stats(path)
+    if stats.played == 0:
+        print("No saved statistics to reset.")
+        return 0
+    show_stats(stats)
+    print()
+    try:
+        answer = input("Reset all statistics? This cannot be undone. (y/N): ")
+    except (EOFError, KeyboardInterrupt):
+        print()
+        return 0  # no answer is a no
+    if not confirms_reset(answer):
+        return 0
+    try:
+        reset_stats(path)
+    except OSError as error:
+        print(f"(Could not delete {path}: {error})")
+        return 1
+    return 0
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     use_color = "--no-color" not in argv
     path = default_stats_path()
+    if "--reset-stats" in argv:
+        return ask_reset(path)  # never goes on to play
     stats = load_stats(path)
 
     while True:
