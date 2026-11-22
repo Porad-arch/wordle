@@ -131,3 +131,68 @@ The stats are shown as:
 - Resetting the statistics from inside the game (delete the file to reset).
 - A breakdown of how many guesses each win took.
 - Stats for more than one player on the same computer.
+
+## Round 3
+
+### Shape of the code
+
+| File | Change | Tested |
+|---|---|---|
+| `game.py` | New `Difficulty` enum (Easy, Normal, Hard) with each level's number of guesses, and `parse_difficulty(text)` for the player's answer | Yes |
+| `words.py` | Each word gets a hand-assigned commonness rating. New functions score each word, rank the list, split it into three levels, and pick from one level | Yes |
+| `stats.py` | Unchanged. All levels count toward the same statistics | — |
+| `main.py` | Asks for the level before every game | No (presentation) |
+
+### How each requirement is met
+
+- **R2 (changed)**: `Difficulty.EASY.attempts == 8`, `Difficulty.NORMAL.attempts == 6`,
+  `Difficulty.HARD.attempts == 4`. A game is made with
+  `Game(answer, difficulty.attempts)`. `Game` already counted guesses against
+  `max_attempts`, so how a game runs and ends hasn't changed. `MAX_ATTEMPTS`
+  stays at 6 because Normal is the default level.
+  `parse_difficulty(text)` turns the player's answer into a level:
+  `e`/`easy`, `n`/`normal`, `h`/`hard` in any case, with spaces around it
+  trimmed, and an empty answer means Normal. Anything else returns `None`, and
+  `main.py` asks again.
+- **R9**: three parts are added up into one score. A higher score is a harder
+  word.
+
+  | Part | Points | Function |
+  |---|---|---|
+  | The word has a repeated letter | 0 or 1 | `has_repeated_letter(word)` |
+  | Uncommon letters, counted each time they appear, from `J Q X Z K V W Y F B` | 0 or more | `uncommon_letter_count(word)` |
+  | Hand rating of how common the word is: 1 everyday, 2 familiar, 3 less common | 1–3 | `COMMONNESS[word]` |
+
+  `difficulty_score(word)` returns the total. `ranked_words()` sorts the
+  whole list by `(score, word)`, so a tie is broken alphabetically and the
+  order is always the same. `words_for(difficulty)` cuts that ranking into
+  three nearly equal parts (Easy gets the first third, Normal the middle,
+  Hard the last). For the 100-word list the parts are 33, 33, and 34 words.
+  `pick_word(rng=None, difficulty=None)` picks from that level's words. If no
+  level is given it picks from the whole list, as in round 1, so R4 still
+  holds.
+
+  Examples: `CRANE` is 0 + 0 + 1 = 1. `PIZZA` is 1 + 2 + 2 = 5. `JEWEL` is
+  1 + 2 + 3 = 6.
+
+### Flow of one run
+
+1. Load the stats.
+2. Ask `Difficulty? (e)asy, (n)ormal, (h)ard [n]:`. Enter means Normal. An
+   answer that isn't recognised asks again. Ctrl-C or end of input here quits
+   without recording a game, because no game has started.
+3. Pick a word from that level's words and play with that level's number of
+   guesses. Everything after that is the same as in round 2: record, save,
+   show the stats, and ask `Play again?`.
+
+### Statistics
+
+All levels share the one set of statistics from round 2. A win on Easy
+extends the same streak as a win on Hard. The stats file format and
+`version` are unchanged, so existing files keep loading as they are.
+
+### Out of scope in round 3
+
+- Separate statistics for each level.
+- Choosing the level from the command line.
+- Changing the level in the middle of a game.
