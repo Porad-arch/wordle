@@ -69,6 +69,13 @@ until all tests pass including the old ones, and add a decision record in
 
 - Decision records are numbered `0001`, `0002`, … in one sequence across all
   rounds, and are never renumbered. Continue from the highest number there.
+- When a later decision replaces an earlier one, write a new record and
+  change only the old record's `Status` line to name the new one. Never
+  rewrite the body of an old record.
+- A test for a changed requirement must fail against the old code. Check
+  this before committing it (for example, run it against the previous
+  commit's module in a scratch copy). A test that passes either way checks
+  nothing.
 - Tests may be committed before the code they check, but that commit won't
   pass on its own. Name every such commit in the handoff so a bisect can
   skip it.
