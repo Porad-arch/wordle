@@ -13,6 +13,13 @@ meets them), `docs/decisions/` (why things are the way they are), and the newest
     python3 main.py        # play
     python3 -m pytest      # run the tests
 
+To try it by hand, always with a scratch `HOME` (see below), and optionally
+with a known answer. The stand-in must accept `pick_word`'s `difficulty`
+keyword:
+
+    HOME=$(mktemp -d) python3 main.py
+    HOME=$(mktemp -d) python3 -c "import main; main.pick_word=lambda difficulty=None: 'CRANE'; main.main([])"
+
 ## How this repo works
 
 - **Requirements come first.** `problem.md` holds numbered requirements R1, R2,
@@ -21,7 +28,11 @@ meets them), `docs/decisions/` (why things are the way they are), and the newest
 - **Rules are separate from input and output.** Everything testable lives in
   `game.py`, `words.py`, and `stats.py` as pure functions and plain state
   (`stats.py` also holds the stats-file load and save). `main.py` only
-  prints and reads. Do not put a rule in `main.py`.
+  prints and reads. Do not put a rule in `main.py`. That includes how a
+  typed answer is understood: `main.py` asks, a rule module parses (for
+  example `game.parse_difficulty`).
+- **Imports go one way:** `words.py` and `stats.py` may import from
+  `game.py`, never the reverse.
 - **Every requirement is named in a test.** Test names start with the
   requirement ID, for example `test_r3_...`. When a requirement changes, its
   tests change with it in the same round.
@@ -58,5 +69,8 @@ until all tests pass including the old ones, and add a decision record in
 
 - Decision records are numbered `0001`, `0002`, … in one sequence across all
   rounds, and are never renumbered. Continue from the highest number there.
+- Tests may be committed before the code they check, but that commit won't
+  pass on its own. Name every such commit in the handoff so a bisect can
+  skip it.
 - Write `handoff-round-<N>.md` only when asked, and don't commit it (or a
   CLAUDE.md change made with it) until the owner has read it.
