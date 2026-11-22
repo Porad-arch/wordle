@@ -1,13 +1,13 @@
 """The terminal front end: reads guesses, prints the board, says who won,
 and shows the running statistics after each game.
 
-All the rules live in game.py. This file only handles input and output, which
-is why there are no tests for it.
+All the rules live in game.py, words.py, and stats.py. This file only handles
+input and output, which is why there are no tests for it.
 """
 
 import sys
 
-from game import MAX_ATTEMPTS, Game, Mark, result_message
+from game import Game, Mark, parse_difficulty, result_message
 from stats import default_stats_path, load_stats, record_game, save_stats, win_percentage
 from words import pick_word
 
@@ -38,12 +38,26 @@ def show_stats(stats):
     print(f"Current streak {stats.current_streak}   Longest streak {stats.longest_streak}")
 
 
-def play_one(use_color):
-    """Play one game. Returns (game, quit_early)."""
-    game = Game(pick_word())
+def ask_difficulty():
+    """Ask for the level until the answer is understood. None means quit."""
+    while True:
+        try:
+            raw = input("Difficulty? (e)asy, (n)ormal, (h)ard [n]: ")
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return None
+        level = parse_difficulty(raw)
+        if level is not None:
+            return level
+        print("  Please type e, n, or h (or press Enter for normal).")
 
-    print("Guess the five-letter word.")
-    print(f"You have {MAX_ATTEMPTS} tries.  + right place   ? wrong place   . not in word")
+
+def play_one(level, use_color):
+    """Play one game at `level`. Returns (game, quit_early)."""
+    game = Game(pick_word(difficulty=level), level.attempts)
+
+    print(f"{level.name.title()}: guess the five-letter word.")
+    print(f"You have {level.attempts} tries.  + right place   ? wrong place   . not in word")
     print()
 
     while not game.is_over:
@@ -83,7 +97,11 @@ def main(argv=None):
     stats = load_stats(path)
 
     while True:
-        game, quit_early = play_one(use_color)
+        level = ask_difficulty()
+        if level is None:
+            return 0  # no game started, so nothing to record
+        print()
+        game, quit_early = play_one(level, use_color)
         stats = record_game(stats, game)
         try:
             save_stats(stats, path)
