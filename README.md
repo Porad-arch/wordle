@@ -23,8 +23,9 @@ Before each game, pick a level. Press Enter for Normal:
 | Normal | 6 | the middle third |
 | Hard | 4 | the hardest third |
 
-A word is harder if it has a repeated letter, contains uncommon letters
-(J Q X Z K V W Y F B), or is a less common word.
+How common a word is decides first: a less common word is always on a
+harder level than an everyday one. Among words that are equally common, a
+word is harder if it contains J, Q, X, or Z, or has a repeated letter.
 
 After each guess, the symbols under the letters mean:
 
