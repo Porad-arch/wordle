@@ -19,7 +19,8 @@ meets them), `docs/decisions/` (why things are the way they are), and the newest
   … Numbers are never reused. A changed requirement keeps its number and says
   what changed; a removed one stays in the file, marked removed.
 - **Rules are separate from input and output.** Everything testable lives in
-  `game.py` and `words.py` as pure functions and plain state. `main.py` only
+  `game.py`, `words.py`, and `stats.py` as pure functions and plain state
+  (`stats.py` also holds the stats-file load and save). `main.py` only
   prints and reads. Do not put a rule in `main.py`.
 - **Every requirement is named in a test.** Test names start with the
   requirement ID, for example `test_r3_...`. When a requirement changes, its
