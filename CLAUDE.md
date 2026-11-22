@@ -20,6 +20,11 @@ keyword:
     HOME=$(mktemp -d) python3 main.py
     HOME=$(mktemp -d) python3 -c "import main; main.pick_word=lambda difficulty=None: 'CRANE'; main.main([])"
 
+To play a whole game with no typing, pipe the answers in (level, guesses,
+then the play-again answer):
+
+    printf 'e\nSTONE\nCRANE\nn\n' | HOME=$(mktemp -d) python3 -c "import main; main.pick_word=lambda difficulty=None: 'CRANE'; main.main(['--no-color'])"
+
 ## How this repo works
 
 - **Requirements come first.** `problem.md` holds numbered requirements R1, R2,
@@ -46,7 +51,12 @@ keyword:
 - **Existing stats files must keep loading.** A file the loader doesn't
   recognise is read as all zeros, so a careless format change wipes every
   player's stats without a word. When the format changes, bump `version`,
-  keep reading the old versions, and add a test that an old file still loads.
+  keep reading **every** old version, and keep a test for each one that a
+  file of that version still loads.
+- **Store a statistic only if it can't be worked out from the others.**
+  `lost` is `played - won` and untracked wins are `won` minus the
+  distribution; neither is in the file. Two stored numbers that must agree
+  will one day disagree.
 
 ## Commits
 
