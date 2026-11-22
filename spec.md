@@ -256,3 +256,83 @@ Unchanged. The stats file is still version 1.
 
 - Changing any word's hand rating, or the 1–3 scale.
 - Changing how the levels are split (still equal thirds).
+
+## Round 5
+
+### Shape of the code
+
+| File | Change | Tested |
+|---|---|---|
+| `stats.py` | `Stats` gains `wins_by_guesses`, eight counts for wins in 1 to 8 guesses. New `untracked_wins`, `average_guesses_to_win`, and `bar_lengths`. The stats file becomes version 2, and version 1 still loads | Yes |
+| `game.py`, `words.py` | Unchanged | — |
+| `main.py` | Shows the average and the distribution under the existing stats | No (presentation) |
+
+### How each requirement is met
+
+- **R10**: Choices the project owner made at the start of round 5: one
+  distribution for every level, a stats file from before round 5 starts its
+  distribution at zero and the display says how many earlier wins it doesn't
+  cover, an average line is shown, and the rows are drawn as text bars.
+
+  - `Stats.wins_by_guesses` is a tuple of 8 whole numbers. Position 0 is
+    wins in 1 guess, and position 7 is wins in 8. `GUESS_ROWS = 8`
+    covers every level's number of guesses (Easy has the most, 8).
+  - `record_game(stats, game)` adds one to the row for
+    `game.attempts_used` when the game is won. A loss or a quit game
+    leaves the distribution alone.
+  - `untracked_wins(stats)` is `won - sum(wins_by_guesses)`: wins recorded
+    before guess counts were kept. It is worked out and never stored,
+    like `lost`. For a new player it is always 0.
+  - `average_guesses_to_win(stats)` is the average over the wins in the
+    distribution only (untracked wins have no guess count). It is rounded
+    to one decimal place, with halves rounded up, using integer arithmetic.
+    It is `None` when there are no wins in the distribution.
+  - `bar_lengths(counts, width=20)` gives the number of `#` for each row.
+    If the biggest count fits in `width`, each win is one `#`. If not, the
+    biggest row gets `width` and the others are scaled to match, rounded
+    with halves up, and any row that has at least one win gets at least one
+    `#`. A row with no wins has no bar.
+  - The end-of-game line `You got it in 3 of 6 guesses!` is unchanged. It
+    already tells the player how many guesses this win took.
+
+### What the player sees
+
+After each game, under the round 2 lines:
+
+    Played 21   Won 19   Lost 2   Win 90%
+    Current streak 7   Longest streak 9
+    Average guesses to win 3.8
+
+    Guesses to win
+      1 | 0
+      2 | # 1
+      3 | ##### 5
+      4 | ######## 8
+      5 | #### 4
+      6 | # 1
+      7 | 0
+      8 | 0
+      (plus 2 earlier wins from before guess counts were kept)
+
+All eight rows are always shown. The last line appears only when
+`untracked_wins` is more than 0. With no wins in the distribution the
+average line reads `Average guesses to win -`.
+
+### The stats file
+
+    {"version": 2, "played": 21, "won": 19, "current_streak": 7,
+     "longest_streak": 9, "wins_by_guesses": [0, 1, 5, 8, 4, 1, 0, 0]}
+
+- `save_stats` always writes version 2.
+- A version 1 file still loads with all its numbers, and its
+  `wins_by_guesses` is all zeros. So every one of its wins counts as
+  untracked. It is written back as version 2 after the next game.
+- A version 2 file is read as all zeros (like any damaged file) if
+  `wins_by_guesses` is missing, isn't a list of exactly 8 whole numbers of
+  0 or more, or adds up to more than `won`.
+
+### Out of scope in round 5
+
+- A separate distribution for each level.
+- Highlighting the row of the game just won.
+- Guessing where the untracked wins of an old file belong.
