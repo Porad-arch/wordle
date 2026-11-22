@@ -47,10 +47,21 @@ def uncommon_letter_count(word):
     return sum(1 for c in word.upper() if c in UNCOMMON_LETTERS)
 
 
+def letter_bonus(word):
+    """Extra difficulty from the letters: J, Q, X, Z each time they appear,
+    plus 1 if any letter is repeated."""
+    return uncommon_letter_count(word) + int(has_repeated_letter(word))
+
+
 def difficulty_score(word):
-    """Higher is harder: repeated letter (0/1) + uncommon letters + hand rating."""
+    """A (rating, bonus) pair. Higher is harder.
+
+    Pairs compare first item first, so the hand commonness rating always
+    decides, and the letter bonus only orders words with the same rating.
+    However big the bonus, it can never outweigh the rating (R9, round 4).
+    """
     word = word.upper()
-    return int(has_repeated_letter(word)) + uncommon_letter_count(word) + COMMONNESS[word]
+    return (COMMONNESS[word], letter_bonus(word))
 
 
 def ranked_words():

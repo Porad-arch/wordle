@@ -11,6 +11,7 @@ from words import (
     WORDS,
     difficulty_score,
     has_repeated_letter,
+    letter_bonus,
     pick_word,
     ranked_words,
     uncommon_letter_count,
@@ -50,9 +51,10 @@ def test_r4_pick_word_does_not_always_return_the_same_word():
     assert len(seen) > 1
 
 
-# R9: Rate every word for difficulty from a repeated letter, uncommon letters,
-#     and a hand-assigned commonness rating. Easy games draw from the easiest
-#     words, Normal from the middle, and Hard from the hardest.
+# R9 (changed in round 4): rate every word for difficulty, primarily by how
+#     common it is, with J, Q, X, and Z as uncommon letters. Letter bonuses
+#     must not outweigh the commonness rating. Easy games draw from the
+#     easiest words, Normal from the middle, and Hard from the hardest.
 
 
 def test_r9_every_word_has_a_hand_rating_from_1_to_3():
@@ -90,15 +92,52 @@ def test_r9_uncommon_letters_are_counted_each_time_they_appear(word, count):
     assert uncommon_letter_count(word) == count
 
 
-@pytest.mark.parametrize("word, score", [("CRANE", 1), ("PIZZA", 5), ("JEWEL", 5)])
-def test_r9_the_score_adds_the_three_parts(word, score):
+@pytest.mark.parametrize(
+    "word, bonus",
+    [("CRANE", 0), ("HAPPY", 1), ("QUICK", 1), ("JEWEL", 2), ("PIZZA", 3)],
+)
+def test_r9_the_letter_bonus_adds_uncommon_letters_and_a_repeat(word, bonus):
+    assert letter_bonus(word) == bonus
+
+
+def test_r9_the_letter_bonus_is_the_sum_for_every_word():
+    for w in WORDS:
+        assert letter_bonus(w) == uncommon_letter_count(w) + int(has_repeated_letter(w))
+
+
+@pytest.mark.parametrize(
+    "word, score", [("CRANE", (1, 0)), ("HAPPY", (1, 1)), ("PIZZA", (2, 3)), ("JEWEL", (3, 2))]
+)
+def test_r9_the_score_is_the_rating_then_the_bonus(word, score):
     assert difficulty_score(word) == score
 
 
-def test_r9_the_score_is_the_sum_for_every_word():
+def test_r9_the_score_puts_the_rating_first_for_every_word():
     for w in WORDS:
-        expected = int(has_repeated_letter(w)) + uncommon_letter_count(w) + COMMONNESS[w]
-        assert difficulty_score(w) == expected
+        assert difficulty_score(w) == (COMMONNESS[w], letter_bonus(w))
+
+
+def test_r9_a_less_common_word_is_always_harder_whatever_its_letters():
+    # The heart of the round 4 change: no bonus lifts a word level with, or
+    # above, a word whose rating is higher.
+    for a in WORDS:
+        for b in WORDS:
+            if COMMONNESS[a] < COMMONNESS[b]:
+                assert difficulty_score(a) < difficulty_score(b), (a, b)
+
+
+def test_r9_pizza_ranks_below_every_less_common_word():
+    # In round 3 PIZZA (familiar, but Z, Z and a repeat) outranked every
+    # less common word. Its letters must no longer outweigh its rating.
+    ranked = ranked_words()
+    rated_3 = [w for w in WORDS if COMMONNESS[w] == 3]
+    assert all(ranked.index("PIZZA") < ranked.index(w) for w in rated_3)
+
+
+def test_r9_the_bonus_still_orders_words_with_the_same_rating():
+    # "Primarily" by commonness, not only: the letters still count.
+    assert difficulty_score("HAPPY") > difficulty_score("CRANE")
+    assert difficulty_score("PIZZA") > difficulty_score("SALAD")
 
 
 def test_r9_the_score_is_case_insensitive():
@@ -142,12 +181,18 @@ def test_r9_the_easiest_and_hardest_words_land_on_the_right_level():
     assert "JEWEL" in words_for(Difficulty.HARD)
 
 
-def test_r9_hard_words_are_harder_on_average_than_easy_words():
-    def mean(ws):
-        return sum(difficulty_score(w) for w in ws) / len(ws)
+def test_r9_hard_words_are_less_common_on_average_than_easy_words():
+    def mean_rating(ws):
+        return sum(COMMONNESS[w] for w in ws) / len(ws)
 
-    assert mean(words_for(Difficulty.EASY)) < mean(words_for(Difficulty.NORMAL))
-    assert mean(words_for(Difficulty.NORMAL)) < mean(words_for(Difficulty.HARD))
+    assert mean_rating(words_for(Difficulty.EASY)) < mean_rating(words_for(Difficulty.NORMAL))
+    assert mean_rating(words_for(Difficulty.NORMAL)) < mean_rating(words_for(Difficulty.HARD))
+
+
+def test_r9_easy_ratings_are_no_higher_than_normal_and_normal_than_hard():
+    easy, normal, hard = ([COMMONNESS[w] for w in words_for(d)] for d in Difficulty)
+    assert max(easy) <= min(normal)
+    assert max(normal) <= min(hard)
 
 
 @pytest.mark.parametrize("level", list(Difficulty))
