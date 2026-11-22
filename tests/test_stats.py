@@ -1,5 +1,5 @@
 """Tests for game statistics (R7), saved streaks (R8), and the distribution
-of winning guess counts (R10)."""
+of winning guess counts (R10), and resetting the saved statistics (R11)."""
 
 import json
 
@@ -11,9 +11,11 @@ from stats import (
     Stats,
     average_guesses_to_win,
     bar_lengths,
+    confirms_reset,
     default_stats_path,
     load_stats,
     record_game,
+    reset_stats,
     save_stats,
     untracked_wins,
     win_percentage,
@@ -426,3 +428,80 @@ def test_r10_a_good_version_2_file_loads(tmp_path):
     path.write_text(V2.format(', "wins_by_guesses": [0, 1, 2, 0, 0, 0, 0, 0]'))
     stats = load_stats(path)
     assert stats == Stats(5, 3, 1, 2, (0, 1, 2, 0, 0, 0, 0, 0))
+
+
+# R11: resetting the saved statistics.
+
+
+def played_stats():
+    return Stats(3, 2, 1, 2, (0, 1, 1, 0, 0, 0, 0, 0))
+
+
+@pytest.mark.parametrize("answer", ["y", "Y", "yes", "YES", "Yes", "  y  ", "yes\n"])
+def test_r11_yes_confirms_the_reset(answer):
+    assert confirms_reset(answer) is True
+
+
+@pytest.mark.parametrize(
+    "answer", ["", "   ", "n", "no", "N", "yep", "ye", "y y", "reset", "1"]
+)
+def test_r11_anything_but_yes_keeps_the_stats(answer):
+    # The question defaults to No, so Enter on its own must not reset.
+    assert confirms_reset(answer) is False
+
+
+def test_r11_reset_deletes_the_stats_file(tmp_path):
+    path = tmp_path / "stats.json"
+    save_stats(played_stats(), path)
+    reset_stats(path)
+    assert not path.exists()
+
+
+def test_r11_after_a_reset_the_stats_load_as_all_zeros(tmp_path):
+    path = tmp_path / "stats.json"
+    save_stats(played_stats(), path)
+    reset_stats(path)
+    assert load_stats(path) == Stats()
+
+
+def test_r11_resetting_a_version_1_file_clears_its_untracked_wins(tmp_path):
+    path = tmp_path / "stats.json"
+    path.write_text(json.dumps(
+        {"version": 1, "played": 3, "won": 2, "current_streak": 1, "longest_streak": 2}
+    ))
+    assert untracked_wins(load_stats(path)) == 2
+    reset_stats(path)
+    assert untracked_wins(load_stats(path)) == 0
+
+
+def test_r11_resetting_with_no_file_is_not_an_error(tmp_path):
+    path = tmp_path / "stats.json"
+    reset_stats(path)
+    reset_stats(path)  # twice in a row is fine too
+    assert not path.exists()
+
+
+def test_r11_reset_leaves_other_files_alone(tmp_path):
+    path = tmp_path / "stats.json"
+    other = tmp_path / "other.json"
+    other.write_text("keep me")
+    save_stats(played_stats(), path)
+    reset_stats(path)
+    assert other.read_text() == "keep me"
+
+
+def test_r11_a_reset_that_cannot_delete_raises_oserror(tmp_path):
+    # A folder where the stats file should be can't be removed as a file.
+    path = tmp_path / "stats.json"
+    path.mkdir()
+    with pytest.raises(OSError):
+        reset_stats(path)
+    assert path.exists()
+
+
+def test_r11_playing_after_a_reset_starts_from_zero(tmp_path):
+    path = tmp_path / "stats.json"
+    save_stats(played_stats(), path)
+    reset_stats(path)
+    save_stats(record_game(load_stats(path), won_game()), path)
+    assert load_stats(path) == Stats(1, 1, 1, 1, (1, 0, 0, 0, 0, 0, 0, 0))
