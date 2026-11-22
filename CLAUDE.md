@@ -10,8 +10,9 @@ meets them), `docs/decisions/` (why things are the way they are), and the newest
 
 ## Commands
 
-    python3 main.py        # play
-    python3 -m pytest      # run the tests
+    python3 main.py                # play
+    python3 main.py --reset-stats  # clear the saved stats (asks first)
+    python3 -m pytest              # run the tests
 
 To try it by hand, always with a scratch `HOME` (see below), and optionally
 with a known answer. The stand-in must accept `pick_word`'s `difficulty`
@@ -46,7 +47,10 @@ then the play-again answer):
 - **No API keys, no logins, no paid services, no network.** The word list is
   compiled into the program on purpose.
 - **Never touch the player's real stats file** (`~/.wordle_stats.json`).
-  Tests pass a `tmp_path` to `load_stats` / `save_stats`. To try the game by
+  Tests pass a `tmp_path` to `load_stats` / `save_stats` / `reset_stats`.
+  A test that runs `main.main` (see `tests/test_main.py`) must point
+  `main.default_stats_path` at a `tmp_path` and replace `input`, or it can
+  delete the real file or hang waiting for typing. To try the game by
   hand, run it as `HOME=$(mktemp -d) python3 main.py`.
 - **Existing stats files must keep loading.** A file the loader doesn't
   recognise is read as all zeros, so a careless format change wipes every
