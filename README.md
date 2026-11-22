@@ -23,6 +23,17 @@ After each guess, the symbols under the letters mean:
 | `?` | the letter is in the word, but somewhere else |
 | `.` | the letter is not in the word |
 
+## Statistics
+
+After every game the game shows how many you have played, won, and lost, your
+win percentage, and your current and longest winning streak, then asks
+whether to play again. Quitting partway through a game (Ctrl-C) counts as a
+loss.
+
+The statistics are saved in `~/.wordle_stats.json` in your home directory, so
+they carry over to the next time you play. Delete that file to start again
+from zero.
+
 ## Run the tests
 
     python3 -m pytest
@@ -33,8 +44,11 @@ Requires Python 3 and `pytest` (`python3 -m pip install pytest`). Nothing else.
 
 - `game.py` — the rules: scoring, attempts, win and loss. No input or output.
 - `words.py` — the built-in word list and the random pick.
+- `stats.py` — games played, won and lost, win percentage, streaks, and the
+  saved stats file.
 - `main.py` — the terminal front end.
 - `tests/` — one test file per module; each test is named for the requirement
   it checks.
 - `problem.md` — who this is for and the numbered requirements.
 - `spec.md` — how the code meets them.
+- `docs/decisions/` — why things are the way they are.
