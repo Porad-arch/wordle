@@ -31,3 +31,9 @@ daily limits, or require an internet connection.
   uncommon letters, and a hand-assigned rating of how common the word is.
   Easy games draw from the easiest words, Normal from the middle, and Hard
   from the hardest.
+
+# Round 4 requirements
+
+- R9 (changed). Calculate word difficulty primarily based on word commonness,
+  with J, Q, X, and Z treated as uncommon letters. Uncommon-letter bonuses
+  must not outweigh the word's overall commonness rating.
