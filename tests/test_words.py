@@ -73,19 +73,24 @@ def test_r9_repeated_letters_are_detected(word, repeated):
     assert has_repeated_letter(word) is repeated
 
 
-def test_r9_the_uncommon_letters_are_the_agreed_ten():
-    assert UNCOMMON_LETTERS == frozenset("JQXZKVWYFB")
+def test_r9_the_uncommon_letters_are_j_q_x_and_z():
+    assert UNCOMMON_LETTERS == frozenset("JQXZ")
+
+
+@pytest.mark.parametrize("word", ["KNEES", "VOICE", "WATCH", "STORY", "FIELD", "BREAD"])
+def test_r9_k_v_w_y_f_and_b_no_longer_count_as_uncommon(word):
+    assert uncommon_letter_count(word) == 0
 
 
 @pytest.mark.parametrize(
     "word, count",
-    [("CRANE", 0), ("PIZZA", 2), ("JEWEL", 2), ("QUICK", 2), ("INDEX", 1)],
+    [("CRANE", 0), ("PIZZA", 2), ("JEWEL", 1), ("QUICK", 1), ("INDEX", 1), ("JUICE", 1)],
 )
 def test_r9_uncommon_letters_are_counted_each_time_they_appear(word, count):
     assert uncommon_letter_count(word) == count
 
 
-@pytest.mark.parametrize("word, score", [("CRANE", 1), ("PIZZA", 5), ("JEWEL", 6)])
+@pytest.mark.parametrize("word, score", [("CRANE", 1), ("PIZZA", 5), ("JEWEL", 5)])
 def test_r9_the_score_adds_the_three_parts(word, score):
     assert difficulty_score(word) == score
 

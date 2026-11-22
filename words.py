@@ -33,9 +33,9 @@ COMMONNESS = {
 
 WORDS = list(COMMONNESS)
 
-# Letters that make a word harder to find (R9). Each one adds a point every
-# time it appears in the word.
-UNCOMMON_LETTERS = frozenset("JQXZKVWYFB")
+# Letters that make a word harder to find (R9, changed in round 4 to just
+# these four). Each one adds a point every time it appears in the word.
+UNCOMMON_LETTERS = frozenset("JQXZ")
 
 
 def has_repeated_letter(word):
