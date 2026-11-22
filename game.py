@@ -8,7 +8,42 @@ checking what it returns.
 from enum import Enum
 
 WORD_LENGTH = 5
-MAX_ATTEMPTS = 6
+
+
+class Difficulty(Enum):
+    """The level the player picks before a game (R2). Each has its own
+    number of guesses. Which words it draws from is in words.py (R9)."""
+
+    EASY = 8
+    NORMAL = 6
+    HARD = 4
+
+    @property
+    def attempts(self):
+        return self.value
+
+
+# Normal is the default level, so a Game made without a level gets six.
+MAX_ATTEMPTS = Difficulty.NORMAL.attempts
+
+_CHOICES = {
+    "": Difficulty.NORMAL,
+    "e": Difficulty.EASY,
+    "easy": Difficulty.EASY,
+    "n": Difficulty.NORMAL,
+    "normal": Difficulty.NORMAL,
+    "h": Difficulty.HARD,
+    "hard": Difficulty.HARD,
+}
+
+
+def parse_difficulty(text):
+    """Read the player's choice of level.
+
+    Accepts e/easy, n/normal, h/hard in any case. An empty answer means
+    Normal. Returns None for anything else so the caller can ask again.
+    """
+    return _CHOICES.get(text.strip().lower())
 
 
 class Mark(Enum):
