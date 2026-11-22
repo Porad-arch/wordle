@@ -1,9 +1,10 @@
 """Statistics across games: counts and win percentage (R7), streaks and the
-saved stats file (R8), and how many guesses each win took (R10).
+saved stats file (R8), how many guesses each win took (R10), and resetting
+the saved statistics (R11).
 
 The rules are pure functions on an immutable Stats record. The only file
-input and output is in load_stats and save_stats, which take the path as an
-argument so tests can point them at a temporary directory.
+input and output is in load_stats, save_stats, and reset_stats, which take
+the path as an argument so tests can point them at a temporary directory.
 """
 
 import json
@@ -180,3 +181,24 @@ def save_stats(stats, path):
         if os.path.exists(tmp):
             os.remove(tmp)
         raise
+
+
+def confirms_reset(text):
+    """True only if the answer to the reset question is yes (R11).
+
+    The question defaults to No, so an empty answer, or anything that isn't
+    y or yes, keeps the statistics.
+    """
+    return text.strip().lower() in ("y", "yes")
+
+
+def reset_stats(path):
+    """Delete the stats file at `path`, so the stats load as all zeros (R11).
+
+    A missing file is already a fresh start, so there being no file is not
+    an error. Raises OSError if the file exists but can't be removed.
+    """
+    try:
+        os.remove(path)
+    except FileNotFoundError:
+        pass
