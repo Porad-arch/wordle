@@ -43,3 +43,9 @@ daily limits, or require an internet connection.
 - R10. Track and display how many guesses it takes the player to win,
   including a distribution showing how many games were won in 1, 2, 3, 4, 5,
   6, 7, or 8 guesses.
+
+# Round 6 requirements
+
+- R11. Allow players to reset all saved game statistics using a
+  `--reset-stats` command-line option, with a confirmation message before the
+  statistics are permanently cleared.
