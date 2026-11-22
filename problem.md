@@ -37,3 +37,9 @@ daily limits, or require an internet connection.
 - R9 (changed). Calculate word difficulty primarily based on word commonness,
   with J, Q, X, and Z treated as uncommon letters. Uncommon-letter bonuses
   must not outweigh the word's overall commonness rating.
+
+# Round 5 requirements
+
+- R10. Track and display how many guesses it takes the player to win,
+  including a distribution showing how many games were won in 1, 2, 3, 4, 5,
+  6, 7, or 8 guesses.
