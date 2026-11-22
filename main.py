@@ -1,4 +1,5 @@
-"""The terminal front end: reads guesses, prints the board, says who won.
+"""The terminal front end: reads guesses, prints the board, says who won,
+and shows the running statistics after each game.
 
 All the rules live in game.py. This file only handles input and output, which
 is why there are no tests for it.
@@ -7,6 +8,7 @@ is why there are no tests for it.
 import sys
 
 from game import MAX_ATTEMPTS, Game, Mark, result_message
+from stats import default_stats_path, load_stats, record_game, save_stats, win_percentage
 from words import pick_word
 
 SYMBOL = {Mark.CORRECT: "+", Mark.PRESENT: "?", Mark.ABSENT: "."}
@@ -28,10 +30,16 @@ def render(word, marks, use_color=True):
     return f"  {letters}\n  {symbols}"
 
 
-def main(argv=None):
-    argv = sys.argv[1:] if argv is None else argv
-    use_color = "--no-color" not in argv
+def show_stats(stats):
+    print(
+        f"Played {stats.played}   Won {stats.won}   Lost {stats.lost}   "
+        f"Win {win_percentage(stats)}%"
+    )
+    print(f"Current streak {stats.current_streak}   Longest streak {stats.longest_streak}")
 
+
+def play_one(use_color):
+    """Play one game. Returns (game, quit_early)."""
     game = Game(pick_word())
 
     print("Guess the five-letter word.")
@@ -44,7 +52,7 @@ def main(argv=None):
             raw = input(prompt)
         except (EOFError, KeyboardInterrupt):
             print(f"\nStopping. The word was {game.answer}.")
-            return 0
+            return game, True
 
         try:
             marks = game.guess(raw)
@@ -56,7 +64,37 @@ def main(argv=None):
         print()
 
     print(result_message(game))
-    return 0
+    return game, False
+
+
+def ask_play_again():
+    try:
+        answer = input("Play again? (y/n): ")
+    except (EOFError, KeyboardInterrupt):
+        print()
+        return False
+    return answer.strip().lower() in ("y", "yes")
+
+
+def main(argv=None):
+    argv = sys.argv[1:] if argv is None else argv
+    use_color = "--no-color" not in argv
+    path = default_stats_path()
+    stats = load_stats(path)
+
+    while True:
+        game, quit_early = play_one(use_color)
+        stats = record_game(stats, game)
+        try:
+            save_stats(stats, path)
+        except OSError as error:
+            print(f"(Could not save statistics to {path}: {error})")
+        print()
+        show_stats(stats)
+        print()
+        if quit_early or not ask_play_again():
+            return 0
+        print()
 
 
 if __name__ == "__main__":
