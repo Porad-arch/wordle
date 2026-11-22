@@ -8,7 +8,16 @@ input and output, which is why there are no tests for it.
 import sys
 
 from game import Game, Mark, parse_difficulty, result_message
-from stats import default_stats_path, load_stats, record_game, save_stats, win_percentage
+from stats import (
+    average_guesses_to_win,
+    bar_lengths,
+    default_stats_path,
+    load_stats,
+    record_game,
+    save_stats,
+    untracked_wins,
+    win_percentage,
+)
 from words import pick_word
 
 SYMBOL = {Mark.CORRECT: "+", Mark.PRESENT: "?", Mark.ABSENT: "."}
@@ -36,6 +45,18 @@ def show_stats(stats):
         f"Win {win_percentage(stats)}%"
     )
     print(f"Current streak {stats.current_streak}   Longest streak {stats.longest_streak}")
+    average = average_guesses_to_win(stats)
+    print(f"Average guesses to win {'-' if average is None else f'{average:.1f}'}")
+    print()
+    print("Guesses to win")
+    counts = stats.wins_by_guesses
+    for guesses, (count, length) in enumerate(zip(counts, bar_lengths(counts)), 1):
+        bar = "#" * length + " " if length else ""
+        print(f"  {guesses} | {bar}{count}")
+    old = untracked_wins(stats)
+    if old:
+        noun = "win" if old == 1 else "wins"
+        print(f"  (plus {old} earlier {noun} from before guess counts were kept)")
 
 
 def ask_difficulty():
