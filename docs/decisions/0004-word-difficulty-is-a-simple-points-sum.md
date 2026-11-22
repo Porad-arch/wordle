@@ -1,6 +1,8 @@
 # 0004. A word's difficulty is a simple sum of points
 
-- Status: accepted
+- Status: replaced in part by 0007 in round 4 (the plain sum and the ten
+  uncommon letters no longer apply; the hand rating and the repeated-letter
+  point are kept)
 - Round: 3
 - Requirement: R9
 
