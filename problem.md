@@ -20,3 +20,14 @@ daily limits, or require an internet connection.
   calculate the player's win percentage.
 - R8. Track the player's current and longest winning streak, and save these
   statistics locally so they persist between sessions.
+
+# Round 3 requirements
+
+- R2 (changed). Previously the player always had six attempts. The player now
+  chooses Easy, Normal, or Hard before a game starts: Easy gives 8 guesses,
+  Normal gives 6, and Hard gives 4.
+- R9. Rate every word in the built-in list for difficulty, combining three
+  things: whether the word has a repeated letter, whether it contains
+  uncommon letters, and a hand-assigned rating of how common the word is.
+  Easy games draw from the easiest words, Normal from the middle, and Hard
+  from the hardest.
