@@ -29,6 +29,13 @@ meets them), `docs/decisions/` (why things are the way they are), and the newest
   added that cannot run with `python3 -m pytest` on a plain Python install.
 - **No API keys, no logins, no paid services, no network.** The word list is
   compiled into the program on purpose.
+- **Never touch the player's real stats file** (`~/.wordle_stats.json`).
+  Tests pass a `tmp_path` to `load_stats` / `save_stats`. To try the game by
+  hand, run it as `HOME=$(mktemp -d) python3 main.py`.
+- **Existing stats files must keep loading.** A file the loader doesn't
+  recognise is read as all zeros, so a careless format change wipes every
+  player's stats without a word. When the format changes, bump `version`,
+  keep reading the old versions, and add a test that an old file still loads.
 
 ## Commits
 
@@ -48,3 +55,8 @@ Requirements into `problem.md` first and pushed before anything else. Then
 update `spec.md`, write tests for every new or changed requirement, implement
 until all tests pass including the old ones, and add a decision record in
 `docs/decisions/` as a Y-statement for a decision that had real alternatives.
+
+- Decision records are numbered `0001`, `0002`, … in one sequence across all
+  rounds, and are never renumbered. Continue from the highest number there.
+- Write `handoff-round-<N>.md` only when asked, and don't commit it (or a
+  CLAUDE.md change made with it) until the owner has read it.
