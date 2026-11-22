@@ -43,6 +43,20 @@ whether to play again. Games on every level count toward the same
 statistics. Quitting partway through a game (Ctrl-C) counts as a
 loss.
 
+Under that it shows the average number of guesses your wins took, and how
+many games you won in 1, 2, 3, 4, 5, 6, 7, or 8 guesses, as a row of `#`
+for each:
+
+    Guesses to win
+      1 | 0
+      2 | # 1
+      3 | ##### 5
+      4 | ######## 8
+      ...
+
+Wins from before the game kept guess counts (a stats file from an older
+version) aren't in the rows or the average. The game says how many there are.
+
 The statistics are saved in `~/.wordle_stats.json` in your home directory, so
 they carry over to the next time you play. Delete that file to start again
 from zero.
@@ -59,8 +73,8 @@ Requires Python 3 and `pytest` (`python3 -m pip install pytest`). Nothing else.
   or output.
 - `words.py` — the built-in word list, each word's difficulty rating, and the
   random pick.
-- `stats.py` — games played, won and lost, win percentage, streaks, and the
-  saved stats file.
+- `stats.py` — games played, won and lost, win percentage, streaks, guesses
+  per win, and the saved stats file.
 - `main.py` — the terminal front end.
 - `tests/` — one test file per module; each test is named for the requirement
   it checks.
