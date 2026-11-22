@@ -1,7 +1,7 @@
 # wordle
 
-A word-guessing game for the terminal. A hidden five-letter word, six tries,
-and after each guess every letter tells you whether it is in the right place,
+A word-guessing game for the terminal. A hidden five-letter word, a limited
+number of tries, and after each guess every letter tells you whether it is in the right place,
 in the word somewhere else, or not in the word at all.
 
 It runs offline with no account, no ads, and no limit on how many games you
@@ -15,6 +15,17 @@ Add `--no-color` if your terminal does not show the coloured squares:
 
     python3 main.py --no-color
 
+Before each game, pick a level. Press Enter for Normal:
+
+| Level | Tries | Words |
+|---|---|---|
+| Easy | 8 | the easiest third of the word list |
+| Normal | 6 | the middle third |
+| Hard | 4 | the hardest third |
+
+A word is harder if it has a repeated letter, contains uncommon letters
+(J Q X Z K V W Y F B), or is a less common word.
+
 After each guess, the symbols under the letters mean:
 
 | Symbol | Meaning |
@@ -27,7 +38,8 @@ After each guess, the symbols under the letters mean:
 
 After every game the game shows how many you have played, won, and lost, your
 win percentage, and your current and longest winning streak, then asks
-whether to play again. Quitting partway through a game (Ctrl-C) counts as a
+whether to play again. Games on every level count toward the same
+statistics. Quitting partway through a game (Ctrl-C) counts as a
 loss.
 
 The statistics are saved in `~/.wordle_stats.json` in your home directory, so
@@ -42,8 +54,10 @@ Requires Python 3 and `pytest` (`python3 -m pip install pytest`). Nothing else.
 
 ## How it is laid out
 
-- `game.py` — the rules: scoring, attempts, win and loss. No input or output.
-- `words.py` — the built-in word list and the random pick.
+- `game.py` — the rules: scoring, levels and attempts, win and loss. No input
+  or output.
+- `words.py` — the built-in word list, each word's difficulty rating, and the
+  random pick.
 - `stats.py` — games played, won and lost, win percentage, streaks, and the
   saved stats file.
 - `main.py` — the terminal front end.
