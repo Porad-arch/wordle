@@ -2,7 +2,15 @@
 
 import pytest
 
-from game import MAX_ATTEMPTS, Game, Mark, result_message, score_guess
+from game import (
+    MAX_ATTEMPTS,
+    Difficulty,
+    Game,
+    Mark,
+    parse_difficulty,
+    result_message,
+    score_guess,
+)
 
 C = Mark.CORRECT
 P = Mark.PRESENT
@@ -33,29 +41,74 @@ def test_r1_guesses_that_are_not_five_letters_are_rejected(bad):
     assert game.attempts_used == 0
 
 
-# R2: Give players six attempts to guess the correct word.
+# R2 (changed in round 3): The player chooses Easy, Normal, or Hard before a
+#     game starts. Easy gives 8 guesses, Normal gives 6, and Hard gives 4.
 
 
-def test_r2_six_attempts_by_default():
-    assert MAX_ATTEMPTS == 6
+@pytest.mark.parametrize(
+    "level, attempts",
+    [(Difficulty.EASY, 8), (Difficulty.NORMAL, 6), (Difficulty.HARD, 4)],
+)
+def test_r2_each_level_gives_its_number_of_guesses(level, attempts):
+    assert level.attempts == attempts
+    assert Game("CRANE", level.attempts).attempts_left == attempts
+
+
+def test_r2_there_are_exactly_three_levels():
+    assert [d.name for d in Difficulty] == ["EASY", "NORMAL", "HARD"]
+
+
+def test_r2_normal_is_the_default_and_gives_six():
+    assert MAX_ATTEMPTS == Difficulty.NORMAL.attempts == 6
     assert Game("CRANE").attempts_left == 6
 
 
-def test_r2_attempts_run_out_after_six_wrong_guesses():
-    game = Game("CRANE")
-    for _ in range(6):
+@pytest.mark.parametrize("level", list(Difficulty))
+def test_r2_attempts_run_out_after_the_levels_last_guess(level):
+    game = Game("CRANE", level.attempts)
+    for _ in range(level.attempts - 1):
         game.guess("STONE")
-    assert game.attempts_used == 6
+    assert not game.is_over
+    game.guess("STONE")
     assert game.attempts_left == 0
-    assert game.is_over
+    assert game.is_lost
 
 
-def test_r2_a_seventh_guess_is_refused():
-    game = Game("CRANE")
-    for _ in range(6):
+@pytest.mark.parametrize("level", list(Difficulty))
+def test_r2_a_guess_after_the_last_one_is_refused(level):
+    game = Game("CRANE", level.attempts)
+    for _ in range(level.attempts):
         game.guess("STONE")
     with pytest.raises(ValueError):
         game.guess("CRANE")
+
+
+def test_r2_the_win_message_uses_the_levels_number_of_guesses():
+    game = Game("CRANE", Difficulty.EASY.attempts)
+    game.guess("CRANE")
+    assert "1 of 8" in result_message(game)
+
+
+@pytest.mark.parametrize(
+    "text, level",
+    [
+        ("e", Difficulty.EASY), ("easy", Difficulty.EASY), ("EASY", Difficulty.EASY),
+        ("n", Difficulty.NORMAL), ("Normal", Difficulty.NORMAL),
+        ("h", Difficulty.HARD), (" hard ", Difficulty.HARD), ("H", Difficulty.HARD),
+    ],
+)
+def test_r2_the_players_choice_is_read_in_any_case(text, level):
+    assert parse_difficulty(text) is level
+
+
+@pytest.mark.parametrize("text", ["", "   ", "\n"])
+def test_r2_an_empty_choice_means_normal(text):
+    assert parse_difficulty(text) is Difficulty.NORMAL
+
+
+@pytest.mark.parametrize("text", ["x", "medium", "8", "eh", "hardest"])
+def test_r2_an_unrecognised_choice_is_refused(text):
+    assert parse_difficulty(text) is None
 
 
 # R3: Show which letters are correct and in the correct position, correct but
