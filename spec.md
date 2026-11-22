@@ -336,3 +336,81 @@ average line reads `Average guesses to win -`.
 - A separate distribution for each level.
 - Highlighting the row of the game just won.
 - Guessing where the untracked wins of an old file belong.
+
+## Round 6
+
+### Shape of the code
+
+| File | Change | Tested |
+|---|---|---|
+| `stats.py` | New `reset_stats(path)`, which deletes the stats file, and `confirms_reset(text)`, which reads the player's answer to the reset question | Yes |
+| `main.py` | `--reset-stats` shows the saved stats, asks the question, resets on yes, and exits without starting a game | Yes, for R11 only (`tests/test_main.py`) |
+| `game.py`, `words.py` | Unchanged | — |
+
+### How each requirement is met
+
+- **R11**: Choices the project owner made at the start of round 6: the
+  player must answer a yes/no question that defaults to No, the option
+  exits after the question instead of going on to play, the current stats
+  are shown first (and there is no question when there is nothing to
+  reset), and resetting deletes the stats file.
+
+  - `confirms_reset(text)` is `True` only for `y` or `yes`, in any case,
+    with spaces around it trimmed. Everything else, including an empty
+    answer, is `False`, so pressing Enter keeps the stats.
+  - `reset_stats(path)` deletes the file at `path`. If there is no file it
+    does nothing, so resetting twice is not an error. Any other failure
+    (for example, a folder the player can't write to) raises `OSError`.
+    Afterwards `load_stats(path)` returns all zeros, because a missing file
+    already means no games yet (round 2).
+  - `main.main(argv)` checks for `--reset-stats` before anything else. It
+    loads the stats. If `played` is 0 there is nothing to reset: it says so
+    and exits. (The file rules from rounds 2 and 5 make `played == 0` mean
+    every number is 0, and a damaged file, which loads as zeros, is left
+    for the next game to overwrite.) Otherwise it shows the stats block,
+    asks the question, and calls `reset_stats` only if `confirms_reset`
+    says yes. Ctrl-C or end of input at the question counts as no. In every
+    case it then exits without asking for a level.
+  - Exit status: 0 after a reset, a "no", or nothing to reset. 1 if the
+    file could not be deleted, with a message naming the file.
+
+### What the player sees
+
+    $ python3 main.py --reset-stats
+    Played 21   Won 19   Lost 2   Win 90%
+    Current streak 7   Longest streak 9
+    Average guesses to win 3.8
+
+    Guesses to win
+      ...
+
+    Reset all statistics? This cannot be undone. (y/N):
+
+With no saved games:
+
+    $ python3 main.py --reset-stats
+    No saved statistics to reset.
+
+Nothing more is printed after the answer, as the owner chose.
+
+### Statistics
+
+The stats file format is unchanged (still version 2). A reset removes the
+file. The next game writes a fresh version 2 file, so a player who reset
+has no untracked wins from an old version 1 file any more.
+
+### Testing `main.py`
+
+R11 is about a command-line option, so a test of the rule modules alone
+can't show that `--reset-stats` does anything. `tests/test_main.py` runs
+`main.main([...])` with `input` replaced by a list of answers (end of
+input when they run out) and `main.default_stats_path` pointed at a
+`tmp_path`. It covers R11 only. The rest of `main.py` is still checked by
+hand.
+
+### Out of scope in round 6
+
+- A flag to skip the question (such as `--yes`).
+- Resetting only part of the statistics (for example only the
+  distribution, or only the untracked wins).
+- Keeping a backup of the deleted file.
